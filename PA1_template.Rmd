@@ -91,6 +91,8 @@ nonadailyactivity <- dplyr::summarise(dplyr::group_by(nafreeactivity, date),
 
 ```{r}
 print.data.frame(nonadailyactivity)
+with(nonadailyactivity, barplot(totalsteps, names.arg = day, xlab = "Day", 
+                            ylab = "Total Steps", space = 0))
 ```
 
 ### Impact of imputting data on the stimates of the total daily number of steps:

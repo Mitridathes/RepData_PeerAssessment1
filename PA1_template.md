@@ -247,6 +247,13 @@ print.data.frame(nonadailyactivity)
 ## 61 2012-11-30   10766.19 37.3825996    34.11321
 ```
 
+```r
+with(nonadailyactivity, barplot(totalsteps, names.arg = day, xlab = "Day", 
+                            ylab = "Total Steps", space = 0))
+```
+
+![](PA1_template_files/figure-html/unnamed-chunk-9-1.png)<!-- -->
+
 ### Impact of imputting data on the stimates of the total daily number of steps:
 
 
