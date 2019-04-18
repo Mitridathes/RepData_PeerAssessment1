@@ -8,18 +8,113 @@ output:
 
 ## Loading and preprocessing the data
 
-
+```{r}
+if (!file.exists("./data")) {
+        dir.create("./data")     
+}
+URL <- "https://github.com/Mitridathes/RepData_PeerAssessment1/blob/master/activity.zip?raw=true"
+path1 <- "./data/activity.zip"
+if (!file.exists(path1)) {
+        download.file(URL, path1, mode = "wb")
+        unzip(path1, exdir = "./data")
+}
+path2 <- "./data/activity.csv"
+activity <- read.csv(path2, na.strings = "NA", stringsAsFactors = FALSE)
+activity$date <- as.Date(activity$date)
+```
 
 ## What is mean total number of steps taken per day?
 
+### Total, mean and median of the steps taken per day:
+```{r}
+dailyactivity <- dplyr::summarise(dplyr::group_by(activity, date),
+                             totalsteps = sum(steps),
+                             meansteps = mean(steps, na.rm = TRUE),
+                             mediansteps = median(steps, na.rm = TRUE))
+print.data.frame(dailyactivity)
+```
+### Histogram of the total number of steps taken each day:
 
+```{r}
+day <- format(dailyactivity$date, "%d")
+with(dailyactivity, barplot(totalsteps, names.arg = day, xlab = "Day", 
+                            ylab = "Total Steps", space = 0))
+```
 
 ## What is the average daily activity pattern?
 
+```{r}
+intervalmean <- dplyr::summarise(dplyr::group_by(activity, interval),
+                                 intmean = mean(steps, na.rm = TRUE))
+with(intervalmean, plot(interval, intmean, type = "l", xlab = "Interval",
+                        ylab = "Interval mean of steps across all days"))
+```
 
+### The 5-minute interval on average of all days which contains the maxium number of steps:
+
+```{r}
+intervalmean[which.max(intervalmean$intmean), ]
+```
 
 ## Imputing missing values
 
+### Calculating the number of NA's in step variable:
 
+```{r}
+sum(is.na(activity$steps))
+```
+
+### Filling in all missing values using 5 minute-interval means in a new dataset:
+
+```{r}
+fill <- function(row) {
+        intervalmean[intervalmean[, 1] == row[1, 3], 2]
+}
+nafreeactivity <- activity
+for (i in 1:nrow(activity)) {
+        if (is.na(activity[i, 1])) {
+                nafreeactivity[i, 1] <- fill(activity[i, ])
+        }
+}
+```
+
+### Histogram of the total number of steps taken each day with no NA data:
+
+```{r}
+nonadailyactivity <- dplyr::summarise(dplyr::group_by(nafreeactivity, date),
+                                      totalsteps = sum(steps),
+                                      meansteps = mean(steps, na.rm = TRUE),
+                                      mediansteps = median(steps, na.rm = TRUE))
+```
+
+### Total, mean and median of the steps taken per day with no NA data:
+
+```{r}
+print.data.frame(nonadailyactivity)
+```
+
+### Impact of imputting data on the stimates of the total daily number of steps:
+
+```{r}
+summary(activity$steps)
+summary(nafreeactivity$steps)
+```
+
+Filling NA data with 5 minute-interval means modifies the 3rd Quantile value.
 
 ## Are there differences in activity patterns between weekdays and weekends?
+
+```{r}
+# Creating a new factor for weekdays and weekends:
+weekends1 <- c("sábado", "domingo")
+activity$weekd <- factor((weekdays(activity$date) %in% weekends1),
+                              levels = c(FALSE, TRUE),
+                              labels = c("weekday", "weekend"))
+# Calculating the mean of steps by interval and weekend or weekday:
+intervalmean2 <- dplyr::summarise(dplyr::group_by(activity, interval, weekd),
+                                  intmean2 = mean(steps, na.rm = TRUE))
+# Plotting data:
+library(lattice)
+xyplot(intmean2 ~ interval | weekd, data = intervalmean2, type = "l",
+       layout = c(1, 2), xlab = "Interval", ylab = "Average of steps taken")
+```
